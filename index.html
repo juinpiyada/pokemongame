@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Battle Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>Pokemon Battle Simulator</h1>
+            <p>Choose your moves strategically to defeat your opponent!</p>
+        </header>
+
+        <main class="battle-arena">
+            <!-- Player Pokemon -->
+            <section class="pokemon-card player-pokemon">
+                <div class="pokemon-image-container">
+                    <img id="playerPokemonImage" src="" alt="Player Pokemon" class="pokemon-image">
+                    <div class="damage-indicator" id="playerDamageIndicator"></div>
+                </div>
+                <div class="pokemon-info">
+                    <h3 id="playerPokemonName">Loading...</h3>
+                    <p class="pokemon-level">Lv. <span id="playerPokemonLevel">50</span></p>
+                    <div class="pokemon-types" id="playerPokemonTypes"></div>
+                    <div class="hp-bar">
+                        <div class="hp-info">
+                            <span>HP</span>
+                            <span id="playerHpText">150/150</span>
+                        </div>
+                        <div class="hp-bar-bg">
+                            <div class="hp-bar-fill" id="playerHpBar"></div>
+                        </div>
+                    </div>
+                    <div class="pokemon-stats">
+                        <span>ATK: <span id="playerAttack">84</span></span>
+                        <span>DEF: <span id="playerDefense">78</span></span>
+                        <span>SPD: <span id="playerSpeed">100</span></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Battle Center -->
+            <section class="battle-center">
+                <div class="turn-indicator">
+                    <h2 id="turnIndicator">Your Turn</h2>
+                    <p id="battleStatus">Battle in progress...</p>
+                    <div class="animation-status" id="animationStatus"></div>
+                </div>
+                
+                <div class="battle-log">
+                    <h3>Battle Log</h3>
+                    <div class="log-container" id="battleLog">
+                        <div class="log-entry">Battle started! Choose your move!</div>
+                    </div>
+                </div>
+
+                <button class="new-battle-btn" id="newBattleBtn">New Battle</button>
+            </section>
+
+            <!-- Opponent Pokemon -->
+            <section class="pokemon-card opponent-pokemon">
+                <div class="pokemon-image-container">
+                    <img id="opponentPokemonImage" src="" alt="Opponent Pokemon" class="pokemon-image">
+                    <div class="damage-indicator" id="opponentDamageIndicator"></div>
+                </div>
+                <div class="pokemon-info">
+                    <h3 id="opponentPokemonName">Loading...</h3>
+                    <p class="pokemon-level">Lv. <span id="opponentPokemonLevel">50</span></p>
+                    <div class="pokemon-types" id="opponentPokemonTypes"></div>
+                    <div class="hp-bar">
+                        <div class="hp-info">
+                            <span>HP</span>
+                            <span id="opponentHpText">160/160</span>
+                        </div>
+                        <div class="hp-bar-bg">
+                            <div class="hp-bar-fill" id="opponentHpBar"></div>
+                        </div>
+                    </div>
+                    <div class="pokemon-stats">
+                        <span>ATK: <span id="opponentAttack">78</span></span>
+                        <span>DEF: <span id="opponentDefense">100</span></span>
+                        <span>SPD: <span id="opponentSpeed">78</span></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <section class="moves-section">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="moves">Battle Moves</button>
+                <button class="tab-btn" data-tab="info">Pokemon Info</button>
+            </div>
+            
+            <div class="tab-content active" id="moves-tab">
+                <div class="moves-grid" id="movesGrid">
+                    <!-- Moves will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="tab-content" id="info-tab">
+                <div class="pokemon-info-grid">
+                    <div class="info-card">
+                        <h4 id="playerInfoName">Player Pokemon</h4>
+                        <div class="info-stats">
+                            <div class="stat-row">
+                                <span>HP:</span>
+                                <span id="playerInfoHp">150/150</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Attack:</span>
+                                <span id="playerInfoAttack">84</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Defense:</span>
+                                <span id="playerInfoDefense">78</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Speed:</span>
+                                <span id="playerInfoSpeed">100</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h4 id="opponentInfoName">Opponent Pokemon</h4>
+                        <div class="info-stats">
+                            <div class="stat-row">
+                                <span>HP:</span>
+                                <span id="opponentInfoHp">160/160</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Attack:</span>
+                                <span id="opponentInfoAttack">78</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Defense:</span>
+                                <span id="opponentInfoDefense">100</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Speed:</span>
+                                <span id="opponentInfoSpeed">78</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Victory/Defeat Modal -->
+        <div class="modal" id="battleModal">
+            <div class="modal-content">
+                <h2 id="modalTitle">Victory!</h2>
+                <p id="modalMessage">You won the battle!</p>
+                <button class="modal-btn" id="modalBtn">New Battle</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
