@@ -111,209 +111,79 @@ class PokemonBattleSimulator {
             }
         ];
 
-        this.typeColors = {
-            Fire: "#ef4444",
-            Water: "#3b82f6",
-            Grass: "#10b981",
-            Poison: "#8b5cf6",
-            Flying: "#06b6d4",
-            Dragon: "#7c3aed",
-            Ground: "#f59e0b",
-            Ice: "#06b6d4",
-            Steel: "#6b7280",
-            Normal: "#9ca3af",
-            Electric: "#eab308",
-            Ghost: "#7c3aed",
-            Psychic: "#ec4899",
-            Dark: "#374151",
-            Fighting: "#ea580c"
-        };
-
-        this.battleState = {
-            playerPokemon: null,
-            opponentPokemon: null,
-            turn: 'player',
-            battleLog: [],
-            isBattleActive: false,
-            isAnimating: false
-        };
-
-        this.selectedMove = null;
+        this.battleState = {};
         this.initializeGame();
         this.setupEventListeners();
     }
 
     initializeGame() {
         this.resetBattle();
-        this.updateUI();
     }
 
     setupEventListeners() {
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-                this.switchTab(tabName);
-            });
-        });
-
-        // New battle button
-        document.getElementById('newBattleBtn').addEventListener('click', () => {
-            this.resetBattle();
-        });
-
-        // Modal button
+        document.getElementById('newBattleBtn').addEventListener('click', () => this.resetBattle());
         document.getElementById('modalBtn').addEventListener('click', () => {
             this.hideModal();
             this.resetBattle();
         });
     }
 
-    switchTab(tabName) {
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.getElementById(`${tabName}-tab`).classList.add('active');
-
-        // Update info tab if switching to it
-        if (tabName === 'info') {
-            this.updateInfoTab();
-        }
-    }
-
     resetBattle() {
-        // Select random Pokemon for player and opponent
         const playerIndex = Math.floor(Math.random() * this.pokemonData.length);
-        let opponentIndex = Math.floor(Math.random() * this.pokemonData.length);
-        
-        // Ensure different Pokemon
-        while (opponentIndex === playerIndex) {
+        let opponentIndex;
+        do {
             opponentIndex = Math.floor(Math.random() * this.pokemonData.length);
-        }
+        } while (opponentIndex === playerIndex);
 
-        // Deep copy Pokemon data
-        this.battleState.playerPokemon = JSON.parse(JSON.stringify(this.pokemonData[playerIndex]));
-        this.battleState.opponentPokemon = JSON.parse(JSON.stringify(this.pokemonData[opponentIndex]));
+        this.battleState = {
+            playerPokemon: JSON.parse(JSON.stringify(this.pokemonData[playerIndex])),
+            opponentPokemon: JSON.parse(JSON.stringify(this.pokemonData[opponentIndex])),
+            turn: 'player',
+            battleLog: ["A new battle begins! Choose your move!"],
+            isBattleActive: true,
+            isAnimating: false,
+        };
         
-        // Reset HP and PP
-        this.battleState.playerPokemon.hp = this.battleState.playerPokemon.maxHp;
-        this.battleState.opponentPokemon.hp = this.battleState.opponentPokemon.maxHp;
-        
-        this.battleState.playerPokemon.moves.forEach(move => {
-            move.pp = move.maxPp;
-        });
-        
-        this.battleState.opponentPokemon.moves.forEach(move => {
-            move.pp = move.maxPp;
-        });
-
-        this.battleState.turn = 'player';
-        this.battleState.battleLog = ["New battle started! Choose your move!"];
-        this.battleState.isBattleActive = true;
-        this.battleState.isAnimating = false;
-
-        this.selectedMove = null;
         this.updateUI();
     }
-
+    
     updateUI() {
-        this.updatePokemonDisplay();
+        this.updatePokemonDisplay('player', this.battleState.playerPokemon);
+        this.updatePokemonDisplay('opponent', this.battleState.opponentPokemon);
         this.updateMovesDisplay();
         this.updateBattleLog();
-        this.updateTurnIndicator();
-        this.updateInfoTab();
+        document.getElementById('newBattleBtn').disabled = this.battleState.isAnimating;
     }
 
-    updatePokemonDisplay() {
-        const player = this.battleState.playerPokemon;
-        const opponent = this.battleState.opponentPokemon;
+    updatePokemonDisplay(pokemonRole, pokemon) {
+        document.getElementById(`${pokemonRole}PokemonImage`).src = pokemon.image;
+        document.getElementById(`${pokemonRole}PokemonName`).textContent = pokemon.name;
+        document.getElementById(`${pokemonRole}PokemonLevel`).textContent = pokemon.level;
+        document.getElementById(`${pokemonRole}HpText`).textContent = `${pokemon.hp}/${pokemon.maxHp}`;
 
-        // Player Pokemon
-        document.getElementById('playerPokemonImage').src = player.image;
-        document.getElementById('playerPokemonName').textContent = player.name;
-        document.getElementById('playerPokemonLevel').textContent = player.level;
-        document.getElementById('playerHpText').textContent = `${player.hp}/${player.maxHp}`;
-        document.getElementById('playerAttack').textContent = player.attack;
-        document.getElementById('playerDefense').textContent = player.defense;
-        document.getElementById('playerSpeed').textContent = player.speed;
+        const hpBar = document.getElementById(`${pokemonRole}HpBar`);
+        const hpPercentage = (pokemon.hp / pokemon.maxHp) * 100;
+        hpBar.style.width = `${hpPercentage}%`;
 
-        // Player HP Bar
-        const playerHpBar = document.getElementById('playerHpBar');
-        const playerHpPercentage = (player.hp / player.maxHp) * 100;
-        playerHpBar.style.width = `${playerHpPercentage}%`;
-        
-        // Update HP bar color based on health
-        playerHpBar.classList.remove('low', 'critical');
-        if (playerHpPercentage <= 20) {
-            playerHpBar.classList.add('critical');
-        } else if (playerHpPercentage <= 50) {
-            playerHpBar.classList.add('low');
+        hpBar.classList.remove('low', 'critical');
+        if (hpPercentage <= 20) {
+            hpBar.classList.add('critical');
+        } else if (hpPercentage <= 50) {
+            hpBar.classList.add('low');
         }
-
-        // Player Types
-        const playerTypesContainer = document.getElementById('playerPokemonTypes');
-        playerTypesContainer.innerHTML = '';
-        player.type.forEach(type => {
-            const badge = document.createElement('span');
-            badge.className = `type-badge type-${type.toLowerCase()}`;
-            badge.textContent = type;
-            playerTypesContainer.appendChild(badge);
-        });
-
-        // Opponent Pokemon
-        document.getElementById('opponentPokemonImage').src = opponent.image;
-        document.getElementById('opponentPokemonName').textContent = opponent.name;
-        document.getElementById('opponentPokemonLevel').textContent = opponent.level;
-        document.getElementById('opponentHpText').textContent = `${opponent.hp}/${opponent.maxHp}`;
-        document.getElementById('opponentAttack').textContent = opponent.attack;
-        document.getElementById('opponentDefense').textContent = opponent.defense;
-        document.getElementById('opponentSpeed').textContent = opponent.speed;
-
-        // Opponent HP Bar
-        const opponentHpBar = document.getElementById('opponentHpBar');
-        const opponentHpPercentage = (opponent.hp / opponent.maxHp) * 100;
-        opponentHpBar.style.width = `${opponentHpPercentage}%`;
-        
-        // Update HP bar color based on health
-        opponentHpBar.classList.remove('low', 'critical');
-        if (opponentHpPercentage <= 20) {
-            opponentHpBar.classList.add('critical');
-        } else if (opponentHpPercentage <= 50) {
-            opponentHpBar.classList.add('low');
-        }
-
-        // Opponent Types
-        const opponentTypesContainer = document.getElementById('opponentPokemonTypes');
-        opponentTypesContainer.innerHTML = '';
-        opponent.type.forEach(type => {
-            const badge = document.createElement('span');
-            badge.className = `type-badge type-${type.toLowerCase()}`;
-            badge.textContent = type;
-            opponentTypesContainer.appendChild(badge);
-        });
     }
 
     updateMovesDisplay() {
         const movesGrid = document.getElementById('movesGrid');
         movesGrid.innerHTML = '';
 
-        this.battleState.playerPokemon.moves.forEach((move, index) => {
+        this.battleState.playerPokemon.moves.forEach(move => {
             const moveCard = document.createElement('div');
             moveCard.className = 'move-card';
+            const isDisabled = !this.battleState.isBattleActive || this.battleState.turn !== 'player' || move.pp === 0 || this.battleState.isAnimating;
             
-            if (!this.battleState.isBattleActive || this.battleState.turn !== 'player' || move.pp === 0 || this.battleState.isAnimating) {
-                moveCard.disabled = true;
-            }
-
-            if (this.selectedMove === move) {
-                moveCard.classList.add('selected');
+            if(isDisabled) {
+                moveCard.setAttribute('disabled', true);
             }
 
             moveCard.innerHTML = `
@@ -326,12 +196,10 @@ class PokemonBattleSimulator {
                     </div>
                 </div>
             `;
-
-            moveCard.addEventListener('click', () => {
-                if (!moveCard.disabled) {
-                    this.executeMove(move);
-                }
-            });
+            
+            if (!isDisabled) {
+                moveCard.addEventListener('click', () => this.executeTurn('player', move));
+            }
 
             movesGrid.appendChild(moveCard);
         });
@@ -339,273 +207,63 @@ class PokemonBattleSimulator {
 
     updateBattleLog() {
         const logContainer = document.getElementById('battleLog');
-        logContainer.innerHTML = '';
-
-        this.battleState.battleLog.forEach(entry => {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry';
-            logEntry.textContent = entry;
-            logContainer.appendChild(logEntry);
-        });
-
-        // Scroll to bottom
+        logContainer.innerHTML = this.battleState.battleLog.map(entry => `<div class="log-entry">${entry}</div>`).join('');
         logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    updateTurnIndicator() {
-        const turnIndicator = document.getElementById('turnIndicator');
-        const battleStatus = document.getElementById('battleStatus');
-        const animationStatus = document.getElementById('animationStatus');
-        const battleCenter = document.querySelector('.battle-center');
-
-        // Update turn indicator styling
-        battleCenter.classList.remove('player-turn', 'opponent-turn');
-        
-        if (this.battleState.turn === 'player') {
-            turnIndicator.textContent = 'Your Turn';
-            battleCenter.classList.add('player-turn');
-        } else {
-            turnIndicator.textContent = "Opponent's Turn";
-            battleCenter.classList.add('opponent-turn');
-        }
-
-        // Update battle status
-        battleStatus.textContent = this.battleState.isBattleActive ? 'Battle in progress...' : 'Battle finished!';
-
-        // Update animation status
-        if (this.battleState.isAnimating) {
-            animationStatus.textContent = 'Animating...';
-        } else {
-            animationStatus.textContent = '';
-        }
-
-        // Update new battle button
-        const newBattleBtn = document.getElementById('newBattleBtn');
-        newBattleBtn.disabled = this.battleState.isAnimating;
-    }
-
-    updateInfoTab() {
-        const player = this.battleState.playerPokemon;
-        const opponent = this.battleState.opponentPokemon;
-
-        // Player info
-        document.getElementById('playerInfoName').textContent = player.name;
-        document.getElementById('playerInfoHp').textContent = `${player.hp}/${player.maxHp}`;
-        document.getElementById('playerInfoAttack').textContent = player.attack;
-        document.getElementById('playerInfoDefense').textContent = player.defense;
-        document.getElementById('playerInfoSpeed').textContent = player.speed;
-
-        // Opponent info
-        document.getElementById('opponentInfoName').textContent = opponent.name;
-        document.getElementById('opponentInfoHp').textContent = `${opponent.hp}/${opponent.maxHp}`;
-        document.getElementById('opponentInfoAttack').textContent = opponent.attack;
-        document.getElementById('opponentInfoDefense').textContent = opponent.defense;
-        document.getElementById('opponentInfoSpeed').textContent = opponent.speed;
-    }
-
     calculateDamage(attacker, defender, move) {
+        if (move.power === 0) return 0;
         const baseDamage = Math.floor(((2 * attacker.level / 5 + 2) * move.power * attacker.attack / defender.defense) / 50 + 2);
-        const randomFactor = Math.random() * 0.4 + 0.8; // Random factor between 0.8 and 1.2
+        const randomFactor = Math.random() * (1.2 - 0.8) + 0.8;
         return Math.floor(baseDamage * randomFactor);
     }
 
-    async executeMove(move) {
-        if (!this.battleState.isBattleActive || this.battleState.turn !== 'player' || this.battleState.isAnimating) {
-            return;
-        }
+    async executeTurn(turnExecutor, move) {
+        if (!this.battleState.isBattleActive || this.battleState.isAnimating) return;
 
         this.battleState.isAnimating = true;
-        this.selectedMove = move;
-        this.updateMovesDisplay();
-        this.updateTurnIndicator();
+        this.updateUI();
 
-        // Check accuracy
-        const accuracyCheck = Math.random() * 100 <= move.accuracy;
+        const attacker = turnExecutor === 'player' ? this.battleState.playerPokemon : this.battleState.opponentPokemon;
+        const defender = turnExecutor === 'player' ? this.battleState.opponentPokemon : this.battleState.playerPokemon;
+
+        this.battleState.battleLog.push(`${attacker.name} used ${move.name}!`);
+
+        const accuracyCheck = Math.random() * 100 < move.accuracy;
         if (!accuracyCheck) {
-            this.battleState.battleLog.push(`${this.battleState.playerPokemon.name}'s ${move.name} missed!`);
+            this.battleState.battleLog.push("But it missed!");
             this.updateBattleLog();
+        } else {
+            const damage = this.calculateDamage(attacker, defender, move);
+            defender.hp = Math.max(0, defender.hp - damage);
+            move.pp--;
             
-            await this.sleep(1000);
-            this.battleState.turn = 'opponent';
-            this.battleState.isAnimating = false;
-            this.updateTurnIndicator();
+            if(damage > 0) {
+                this.battleState.battleLog.push(`It dealt ${damage} damage!`);
+            }
             
-            setTimeout(() => this.opponentTurn(), 500);
-            return;
+            await this.showAttackAnimation(turnExecutor, defender.name === this.battleState.playerPokemon.name ? 'player' : 'opponent', damage);
         }
 
-        // Calculate damage
-        const damage = this.calculateDamage(this.battleState.playerPokemon, this.battleState.opponentPokemon, move);
-        const newOpponentHp = Math.max(0, this.battleState.opponentPokemon.hp - damage);
-
-        // Show attack animation
-        await this.showAttackAnimation('player');
+        this.updateUI();
         
-        // Show damage
-        await this.showDamage('opponent', damage);
-
-        // Update opponent HP
-        this.battleState.opponentPokemon.hp = newOpponentHp;
-        move.pp--;
-
-        // Add to battle log
-        this.battleState.battleLog.push(`${this.battleState.playerPokemon.name} used ${move.name}!`);
-        this.battleState.battleLog.push(`It dealt ${damage} damage!`);
-
-        this.updatePokemonDisplay();
-        this.updateMovesDisplay();
-        this.updateBattleLog();
-
-        // Check for victory
-        if (newOpponentHp === 0) {
+        if (defender.hp === 0) {
             await this.sleep(500);
-            this.endBattle('victory');
+            this.endBattle(attacker.name);
             return;
         }
 
-        // Switch to opponent's turn
-        this.battleState.turn = 'opponent';
-        this.battleState.isAnimating = false;
-        this.updateTurnIndicator();
+        this.battleState.turn = (this.battleState.turn === 'player') ? 'opponent' : 'player';
 
-        setTimeout(() => this.opponentTurn(), 1000);
+        if (this.battleState.turn === 'opponent') {
+            this.battleState.isAnimating = false; // Release lock for opponent's turn
+            setTimeout(() => this.opponentTurn(), 1000);
+        } else {
+             this.battleState.isAnimating = false;
+             this.updateUI(); // Re-enable player moves
+        }
     }
 
     async opponentTurn() {
-        if (!this.battleState.isBattleActive || this.battleState.isAnimating) {
-            return;
-        }
-
-        this.battleState.isAnimating = true;
-        this.updateTurnIndicator();
-
-        // Get available moves
         const availableMoves = this.battleState.opponentPokemon.moves.filter(move => move.pp > 0);
-        if (availableMoves.length === 0) {
-            this.battleState.battleLog.push(`${this.battleState.opponentPokemon.name} has no moves left!`);
-            this.updateBattleLog();
-            
-            this.battleState.turn = 'player';
-            this.battleState.isAnimating = false;
-            this.updateTurnIndicator();
-            return;
-        }
-
-        // Select random move
-        const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
-
-        // Check accuracy
-        const accuracyCheck = Math.random() * 100 <= randomMove.accuracy;
-        if (!accuracyCheck) {
-            this.battleState.battleLog.push(`${this.battleState.opponentPokemon.name}'s ${randomMove.name} missed!`);
-            this.updateBattleLog();
-            
-            await this.sleep(1000);
-            this.battleState.turn = 'player';
-            this.battleState.isAnimating = false;
-            this.updateTurnIndicator();
-            return;
-        }
-
-        // Calculate damage
-        const damage = this.calculateDamage(this.battleState.opponentPokemon, this.battleState.playerPokemon, randomMove);
-        const newPlayerHp = Math.max(0, this.battleState.playerPokemon.hp - damage);
-
-        // Show attack animation
-        await this.showAttackAnimation('opponent');
-        
-        // Show damage
-        await this.showDamage('player', damage);
-
-        // Update player HP
-        this.battleState.playerPokemon.hp = newPlayerHp;
-        randomMove.pp--;
-
-        // Add to battle log
-        this.battleState.battleLog.push(`${this.battleState.opponentPokemon.name} used ${randomMove.name}!`);
-        this.battleState.battleLog.push(`It dealt ${damage} damage!`);
-
-        this.updatePokemonDisplay();
-        this.updateBattleLog();
-
-        // Check for defeat
-        if (newPlayerHp === 0) {
-            await this.sleep(500);
-            this.endBattle('defeat');
-            return;
-        }
-
-        // Switch to player's turn
-        this.battleState.turn = 'player';
-        this.battleState.isAnimating = false;
-        this.updateTurnIndicator();
-    }
-
-    async showAttackAnimation(attacker) {
-        const imageElement = document.getElementById(`${attacker}PokemonImage`);
-        imageElement.classList.add('attacking');
-        
-        await this.sleep(300);
-        imageElement.classList.remove('attacking');
-    }
-
-    async showDamage(target, damage) {
-        const imageElement = document.getElementById(`${target}PokemonImage`);
-        const damageIndicator = document.getElementById(`${target}DamageIndicator`);
-        
-        // Show shake animation
-        imageElement.classList.add('damaged');
-        
-        // Show damage number
-        damageIndicator.textContent = `-${damage}`;
-        damageIndicator.classList.add('show');
-        
-        await this.sleep(500);
-        
-        imageElement.classList.remove('damaged');
-        damageIndicator.classList.remove('show');
-    }
-
-    endBattle(result) {
-        this.battleState.isBattleActive = false;
-        this.battleState.isAnimating = false;
-        
-        if (result === 'victory') {
-            this.battleState.battleLog.push(`${this.battleState.playerPokemon.name} won the battle!`);
-            this.showModal('victory', 'Victory!', `${this.battleState.playerPokemon.name} won the battle!`);
-        } else {
-            this.battleState.battleLog.push(`${this.battleState.opponentPokemon.name} won the battle!`);
-            this.showModal('defeat', 'Defeat!', `${this.battleState.opponentPokemon.name} won the battle!`);
-        }
-        
-        this.updateBattleLog();
-        this.updateTurnIndicator();
-    }
-
-    showModal(type, title, message) {
-        const modal = document.getElementById('battleModal');
-        const modalContent = modal.querySelector('.modal-content');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-
-        modalContent.className = `modal-content ${type}`;
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        
-        modal.classList.add('show');
-    }
-
-    hideModal() {
-        const modal = document.getElementById('battleModal');
-        modal.classList.remove('show');
-    }
-
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}
-
-// Initialize the game when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new PokemonBattleSimulator();
-});
+        if (availableMoves.leng
